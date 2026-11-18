@@ -50,6 +50,13 @@ limitations under the License.
         <split-panes-container></split-panes-container>
       }
     </div>
+    @if (showTitleBar && !hasNoGraphs) {
+      <footer class="workbench-status">
+        <span>{{graphStats()}}</span>
+        <span class="navigation-hint">Pan: drag or scroll · Zoom: Ctrl + scroll · Fit: Space</span>
+        @if (versionInfo().runningVersion) { <span>v{{versionInfo().runningVersion}}</span> }
+      </footer>
+    }
   }
   </div>
 }

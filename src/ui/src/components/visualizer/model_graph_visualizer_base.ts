@@ -291,7 +291,16 @@ export abstract class ModelGraphVisualizerBase
   handleKeyboardEvent(event: KeyboardEvent) {
     // Press "SPACE" to zoom-to-fit the currently selected renderer.
     if (event.key === ' ') {
-      if (!inInputElement()) {
+      const onControl = event
+        .composedPath()
+        .some(
+          (target) =>
+            target instanceof HTMLElement &&
+            target.matches(
+              'button, a, [role=button], [role=tab], [role=menuitem], [role=menuitemcheckbox]',
+            ),
+        );
+      if (!inInputElement() && !onControl) {
         this.appService.spaceKeyToZoomFitClicked.next({});
       }
     }

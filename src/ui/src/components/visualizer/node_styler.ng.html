@@ -16,9 +16,9 @@ limitations under the License.
 ==============================================================================
 -->
 
-<button mat-icon-button aria-label="node-styler"
+<button mat-button aria-label="Style rules"
     matTooltip="Style nodes with custom rules"
     [class.disabled]="dialogOpened()"
     (click)="handleClickOpenDialog()">
-  <mat-icon [class.highlight]="hasNonEmptyNodeStylerRules()">palette</mat-icon>
+  <mat-icon [class.highlight]="hasNonEmptyNodeStylerRules()">palette</mat-icon>Style rules
 </button>

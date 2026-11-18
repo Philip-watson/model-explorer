@@ -183,3 +183,15 @@
   .cdk-overlay-backdrop {
   pointer-events: none;
 }
+
+.container button.view {
+  width: auto;
+  height: 36px;
+  padding: 0 10px;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}

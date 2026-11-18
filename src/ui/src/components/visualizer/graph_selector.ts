@@ -22,6 +22,7 @@ import {CommonModule} from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  Input,
   ElementRef,
   Signal,
   ViewChild,
@@ -99,6 +100,18 @@ const LABEL_WIDTHS: {[label: string]: number} = {};
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GraphSelector {
+  @Input() hideExportButtons = false;
+
+  compareSelectedGraph() {
+    if (this.showOpenInSplitPane && this.selectedGraph.value) {
+      this.appService.openGraphInSplitPane(this.selectedGraph.value);
+    }
+  }
+
+  get displayCollectionLabel(): string {
+    return this.selectedGraphCollectionLabel.replace(/^(.*?) \(\1\)$/, '$1');
+  }
+
   @ViewChild(MatSelect) mySelector!: MatSelect;
   @ViewChild('input') filterInput!: ElementRef<HTMLInputElement>;
 

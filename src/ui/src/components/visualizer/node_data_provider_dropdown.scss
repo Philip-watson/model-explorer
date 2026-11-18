@@ -194,3 +194,12 @@
     letter-spacing: normal;
   }
 }
+
+.container button.icon-container {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  height: 36px;
+}

@@ -30,11 +30,13 @@ import {
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {MatCheckboxModule} from '@angular/material/checkbox';
+import {MatButtonModule} from '@angular/material/button';
+import {MatMenuModule} from '@angular/material/menu';
+import {BubbleClick} from '../bubble/bubble_click';
 import {MatIconModule} from '@angular/material/icon';
 import {MatSelectModule} from '@angular/material/select';
 import {debounceTime, tap} from 'rxjs/operators';
 
-import {Bubble} from '../bubble/bubble';
 
 import {AppService} from './app_service';
 import {type ModelGraph, ModelNode} from './common/model_graph';
@@ -64,7 +66,9 @@ const TEMP_ESCAPED_SPACE = '___ESCAPED_SPACE___';
   standalone: true,
   selector: 'search-bar',
   imports: [
-    Bubble,
+    BubbleClick,
+    MatButtonModule,
+    MatMenuModule,
     CommonModule,
     IoTree,
     MatCheckboxModule,
@@ -84,6 +88,25 @@ export class SearchBar {
   @ViewChild('content') content!: ElementRef<HTMLElement>;
 
   readonly curSearchText = new FormControl<string>('');
+  useRegex = false;
+  searchScope = 'names';
+  searchError = '';
+  resultsDismissed = false;
+
+  setSearchScope(scope: string) {
+    this.resultsDismissed = false;
+    this.searchScope = scope;
+    for (const option of this.searchResultTypes)
+      option.selected =
+        scope === 'all' || option.matchType === SearchMatchType.NODE_LABEL;
+    this.handleSearch(this.curSearchText.value || '');
+  }
+
+  toggleRegex() {
+    this.useRegex = !this.useRegex;
+    this.handleSearch(this.curSearchText.value || '');
+  }
+
   readonly searchResultTypes: SearchResultTypeOption[] = [
     {
       matchType: SearchMatchType.NODE_LABEL,
@@ -93,17 +116,17 @@ export class SearchBar {
     {
       matchType: SearchMatchType.ATTRIBUTE,
       label: 'Attrs',
-      selected: true,
+      selected: false,
     },
     {
       matchType: SearchMatchType.INPUT_METADATA,
       label: 'Inputs',
-      selected: true,
+      selected: false,
     },
     {
       matchType: SearchMatchType.OUTPUT_METADATA,
       label: 'Outputs',
-      selected: true,
+      selected: false,
     },
   ];
   readonly searchResultTypeSelectorOverlaySize: OverlaySizeConfig = {
@@ -138,6 +161,7 @@ export class SearchBar {
     this.curSearchText.valueChanges
       .pipe(
         tap(() => {
+          this.resultsDismissed = false;
           this.searching = true;
           this.changeDetectorRef.markForCheck();
         }),
@@ -165,10 +189,12 @@ export class SearchBar {
 
   updateSelectedResultTypes(option: SearchResultTypeOption) {
     option.selected = !option.selected;
+    this.resultsDismissed = false;
+    this.searchScope = 'custom';
     this.changeDetectorRef.markForCheck();
     this.handleSearch(this.curSearchText.value || '');
     setTimeout(() => {
-      this.content.nativeElement.scrollTop = 0;
+      if (this.content) this.content.nativeElement.scrollTop = 0;
     });
   }
 
@@ -195,6 +221,8 @@ export class SearchBar {
 
   get showResultsPanel(): boolean {
     return (
+      !this.resultsDismissed &&
+      !this.searchError &&
       !this.searching &&
       (this.curSearchText.value || '').trim() !== '' &&
       !this.showNoMatches
@@ -203,6 +231,8 @@ export class SearchBar {
 
   get showNoMatches(): boolean {
     return (
+      !this.resultsDismissed &&
+      !this.searchError &&
       !this.searching &&
       (this.curSearchText.value || '').trim() !== '' &&
       this.curSearchMatchedNodes.length === 0 &&
@@ -223,6 +253,7 @@ export class SearchBar {
   }
 
   private handleSearch(searchText: string) {
+    this.searchError = '';
     if (!searchText) {
       this.curPageIndex = 0;
       this.curSearchResultsData = undefined;
@@ -250,7 +281,9 @@ export class SearchBar {
         .split(' ')
         .filter((part) => part.trim() !== '')
         .map((part) => part.replaceAll(TEMP_ESCAPED_SPACE, '\\ '));
-      const regexList = andParts.map((part) => new RegExp(part, 'i'));
+      const regexList = this.useRegex
+        ? andParts.map((part) => new RegExp(part, 'i'))
+        : [new RegExp(searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')];
       for (const node of this.curModelGraph.nodes) {
         if (isOpNode(node) && node.hideInLayout) {
           continue;
@@ -288,8 +321,9 @@ export class SearchBar {
       }
       this.appService.setSearchResults(this.rendererId, searchResults);
     } catch (e) {
-      // Ignore.
-      console.warn('Failed to search', e);
+      this.searchError =
+        'Invalid regular expression. Check the expression or turn off Regex.';
+      this.appService.clearSearchResults(this.rendererId);
     }
 
     this.curPageIndex = 0;

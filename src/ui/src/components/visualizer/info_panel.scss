@@ -428,3 +428,105 @@
     padding: 3px 0;
   }
 }
+
+[hidden] {
+  display: none !important;
+}
+.inspector-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--me-surface-color);
+  border-bottom: 1px solid var(--me-outline-variant-color);
+}
+.inspector-heading {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  min-height: 36px;
+  border-bottom: 1px solid var(--me-outline-hairline-color);
+}
+.inspector-heading h2 {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0 auto 0 0;
+}
+.selection-heading {
+  padding: 16px 16px 8px;
+  overflow-wrap: anywhere;
+}
+.selection-heading h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+.selection-heading p {
+  margin: 0;
+  color: var(--me-on-surface-variant-color);
+  line-height: 1.5;
+}
+.inspector-tabs {
+  display: flex;
+  padding: 0 8px;
+  overflow-x: auto;
+}
+.inspector-tabs button {
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: inherit;
+  padding: 12px 8px;
+  font: inherit;
+  font-size: 13px;
+  text-transform: capitalize;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.inspector-tabs button[aria-selected='true'] {
+  border-bottom-color: var(--me-primary-color);
+  color: var(--me-primary-color);
+  background: var(--me-surface-container-low-color);
+}
+.inspector-tabs span {
+  margin-left: 4px;
+}
+.empty-tab {
+  padding: 16px;
+  color: var(--me-on-surface-variant-color);
+}
+button.hide-toggle {
+  top: 8px;
+  bottom: auto;
+  width: auto;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--me-on-surface-color);
+  border-radius: 4px 0 0 4px;
+  z-index: 25;
+}
+button:focus-visible,
+.resizer:focus-visible {
+  outline: 2px solid var(--me-primary-color);
+  outline-offset: -2px;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.inspector-header {
+  position: static;
+  flex-shrink: 0;
+}
+[role='tabpanel'] {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: 16px;
+}

@@ -17,46 +17,120 @@ limitations under the License.
 -->
 
 <div class="container">
-  <div class="title" (click)="titleClicked.emit()" matTooltip="Back home"
-      [matTooltipDisabled]="disableTitleTooltip">
-    <me-logo></me-logo>
-    Model Explorer
-    <new-version-chip></new-version-chip>
-    @if (processing()) {
-      <div class="processing-container">
-        <mat-progress-spinner mode="indeterminate" diameter="16">
-        </mat-progress-spinner>
-        {{processing()}}
-      </div>
-    }
-  </div>
+  <button
+    class="title"
+    (click)="titleClicked.emit()"
+    aria-label="Model Explorer home"
+  >
+    <me-logo></me-logo>Model Explorer
+  </button>
+  <graph-selector #graphChooser [hideExportButtons]="true"></graph-selector>
+  @if (processing()) {
+    <span class="processing-container" role="status">{{ processing() }}</span>
+  }
   <div class="right-container">
     <node-data-provider-dropdown
-        (onOpenNdpExtensionDialogClicked)="handleOpenNdpExtensionDialogClicked($event)">
-    </node-data-provider-dropdown>
-    <div class="divider"></div>
-
-    <graph-selector></graph-selector>
-
-    <div class="divider tighter-right"></div>
-
+      (onOpenNdpExtensionDialogClicked)="
+        handleOpenNdpExtensionDialogClicked($event)
+      "
+    ></node-data-provider-dropdown>
+    <button
+      mat-button
+      (click)="graphChooser.compareSelectedGraph()"
+      [disabled]="!graphChooser.showOpenInSplitPane"
+    >
+      <mat-icon>compare_arrows</mat-icon
+      >{{ graphChooser.showOpenInSplitPane ? 'Compare' : 'Comparing' }}
+    </button>
+    @for (pane of appService.panes(); track pane.id) {
+      <snapshot-manager
+        [hidden]="pane.id !== appService.selectedPaneId()"
+        [rendererId]="pane.id"
+        [paneId]="pane.id"
+      ></snapshot-manager>
+    }
+    <button mat-button [matMenuTriggerFor]="exportMenu">
+      <mat-icon>download</mat-icon>Export
+    </button>
+    <mat-menu #exportMenu="matMenu">
+      <button
+        mat-menu-item
+        (click)="graphChooser.handleClickDownloadGraphJson()"
+      >
+        Graph collection JSON
+      </button>
+      <button mat-menu-item (click)="exportImage(false)">
+        Current view image (PNG)
+      </button>
+      <button mat-menu-item (click)="exportImage(true)">
+        Full graph image (PNG)
+      </button>
+      <button
+        mat-menu-item
+        role="menuitemcheckbox"
+        [attr.aria-checked]="transparentBackground"
+        (click)="
+          transparentBackground = !transparentBackground;
+          $event.stopPropagation()
+        "
+      >
+        <mat-icon>{{
+          transparentBackground ? 'check_box' : 'check_box_outline_blank'
+        }}</mat-icon>Transparent background
+      </button>
+      @if (graphChooser.enableExportToResource) {
+        <button
+          mat-menu-item
+          (click)="graphChooser.handleClickExportGraphJsonToResource()"
+        >
+          Export to resource
+        </button>
+      }
+    </mat-menu>
     <node-styler (nodeStylerOpened)="nodeStylerOpened.emit()"></node-styler>
-
-    <div class="icons-container">
-      <a href="https://github.com/google-ai-edge/model-explorer" target="_blank">
-        <button mat-icon-button aria-label="doc" matTooltip="GitHub">
-          <mat-icon>article</mat-icon>
-        </button>
-      </a>
-      <a href="https://github.com/google-ai-edge/model-explorer/issues" target="_blank">
-        <button mat-icon-button aria-label="bug"
-            matTooltip="File issue or feature request">
-          <mat-icon>bug_report</mat-icon>
-        </button>
-      </a>
-    </div>
+    <button mat-button [matMenuTriggerFor]="helpMenu">
+      <mat-icon>help_outline</mat-icon>Help
+    </button>
+    <mat-menu #helpMenu="matMenu">
+      <button mat-menu-item (click)="dialog.open(keyboardHelp)">
+        Keyboard and navigation
+      </button>
+      <a
+        mat-menu-item
+        href="https://github.com/google-ai-edge/model-explorer/wiki"
+        target="_blank"
+        rel="noopener"
+        >Documentation</a
+      >
+      <a
+        mat-menu-item
+        href="https://github.com/google-ai-edge/model-explorer"
+        target="_blank"
+        rel="noopener"
+        >GitHub</a
+      >
+      <a
+        mat-menu-item
+        href="https://github.com/google-ai-edge/model-explorer/issues"
+        target="_blank"
+        rel="noopener"
+        >Report an issue</a
+      >
+      <div class="version-info"><new-version-chip></new-version-chip></div>
+    </mat-menu>
     <open-in-new-tab-button></open-in-new-tab-button>
-
     <ng-content></ng-content>
   </div>
 </div>
+<ng-template #keyboardHelp>
+  <h2 mat-dialog-title>Keyboard and navigation</h2>
+  <mat-dialog-content>
+    <p>Pan: drag or scroll. Zoom: Ctrl + scroll, or use the zoom buttons.</p>
+    <p>Fit graph: Space while the canvas is active.</p>
+    <p>Restore a saved view: keys 1–9 while the canvas is active.</p>
+    <p>Search results: click to locate; Alt + click to locate and select.</p>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end"
+    ><button mat-button mat-dialog-close>Close</button></mat-dialog-actions
+  >
+</ng-template>

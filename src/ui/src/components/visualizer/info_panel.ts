@@ -36,6 +36,8 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatSlideToggleModule} from '@angular/material/slide-toggle';
+import {MatDialog} from '@angular/material/dialog';
+import {PrototypeFeatureDialog} from '../prototype_feature_dialog/prototype_feature_dialog';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {combineLatest, fromEvent} from 'rxjs';
 import {takeUntil} from 'rxjs/operators';
@@ -206,6 +208,90 @@ export class InfoPanel {
   curGroupOutputsCount = 0;
   resizing = false;
   hide = false;
+  activeTab: 'overview' | 'inputs' | 'outputs' | 'attributes' = 'overview';
+  readonly inspectorTabs = [
+    'overview',
+    'inputs',
+    'outputs',
+    'attributes',
+  ] as const;
+  private readonly dialog = inject(MatDialog);
+  private readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  get showRestoreButton(): boolean {
+    return this.appService.config()?.hideToolBar === true;
+  }
+  get hasAttributes(): boolean {
+    return this.sections.some(
+      (section) =>
+        (section.label === SectionLabel.ATTRIBUTES ||
+          section.label === SectionLabel.LAYER_ATTRS) &&
+        section.items.length > 0,
+    );
+  }
+
+  get selectionLabel(): string {
+    return (
+      this.curSelectedNode?.label || this.curModelGraph?.id || 'No selection'
+    );
+  }
+  get selectionNamespace(): string {
+    return this.curSelectedNode?.namespace || '';
+  }
+
+  showSection(label: SectionLabel): boolean {
+    const isAttribute =
+      label === SectionLabel.ATTRIBUTES || label === SectionLabel.LAYER_ATTRS;
+    return this.activeTab === (isAttribute ? 'attributes' : 'overview');
+  }
+
+  handleTabKey(event: KeyboardEvent) {
+    const steps: Record<string, number> = {ArrowRight: 1, ArrowLeft: -1};
+    if (!(event.key in steps) && event.key !== 'Home' && event.key !== 'End')
+      return;
+    event.preventDefault();
+    const index =
+      event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? 3
+          : (this.inspectorTabs.indexOf(this.activeTab) +
+              steps[event.key] +
+              4) %
+            4;
+    this.selectTab(this.inspectorTabs[index]);
+    const tablist = (event.target as HTMLElement).closest('[role=tablist]');
+    (tablist?.querySelectorAll('button')[index] as HTMLButtonElement)?.focus();
+  }
+
+  selectTab(tab: typeof this.activeTab) {
+    this.activeTab = tab;
+    setTimeout(() => this.updateInputValueContentsExpandable());
+  }
+
+  resizeBy(amount: number) {
+    this.width = Math.max(
+      MIN_WIDTH,
+      Math.min(
+        (this.elementRef.nativeElement.parentElement?.clientWidth ||
+          window.innerWidth) - 160,
+        this.width + amount,
+      ),
+    );
+    this.minWidth = this.width;
+    this.changeDetectorRef.markForCheck();
+  }
+
+  showDockOptions() {
+    this.dialog.open(PrototypeFeatureDialog, {
+      width: '480px',
+      data: {
+        title: 'Inspector docking',
+        description:
+          'Bottom docking and a shared comparison inspector are being explored. The right-hand inspector can be resized or hidden in this prototype.',
+      },
+    });
+  }
 
   readonly ioPageSize: number;
   readonly SectionLabel = SectionLabel;
@@ -257,6 +343,10 @@ export class InfoPanel {
     private readonly splitPaneService: SplitPaneService,
   ) {
     this.ioPageSize = this.appService.testMode ? 5 : 25;
+    effect(() => {
+      const hide = this.splitPaneService.inspectorHidden();
+      if (hide !== this.hide) this.setHideInfoPanel(hide);
+    });
 
     // Handle selected node changes.
     effect(() => {
@@ -446,18 +536,23 @@ export class InfoPanel {
   }
 
   toggleHideInfoPanel() {
-    this.hide = !this.hide;
-    let targetWidth = 0;
+    this.setHideInfoPanel(!this.hide);
     if (this.hide) {
-      this.savedWidth = this.width;
-    } else {
-      targetWidth = this.savedWidth;
+      setTimeout(() => {
+        const toggle = this.elementRef.nativeElement
+          .closest('split-pane')
+          ?.querySelector<HTMLButtonElement>(
+            '.inspector-toggle, .hide-toggle:not([hidden])',
+          );
+        toggle?.focus();
+      });
     }
-    this.animateSidePanelWidth(targetWidth);
   }
 
   setHideInfoPanel(hide: boolean) {
+    if (hide === this.hide) return;
     this.hide = hide;
+    this.splitPaneService.inspectorHidden.set(hide);
     let targetWidth = 0;
     if (this.hide) {
       this.savedWidth = this.width;
@@ -742,6 +837,11 @@ export class InfoPanel {
 
   private genInfoData() {
     this.sections = [];
+    this.curInputsCount =
+      this.curOutputsCount =
+      this.curGroupInputsCount =
+      this.curGroupOutputsCount =
+        0;
     this.inputItems = [];
     this.outputItems = [];
     this.groupInputItems = [];
@@ -1324,6 +1424,11 @@ export class InfoPanel {
     targetWidth: number,
     duration = SIDE_PANEL_WIDTH_ANIMATION_DURATION,
   ) {
+    if (duration === 0) {
+      this.width = this.minWidth = targetWidth;
+      this.changeDetectorRef.markForCheck();
+      return;
+    }
     const startTs = Date.now();
     const startWidth = this.width;
     const animate = () => {

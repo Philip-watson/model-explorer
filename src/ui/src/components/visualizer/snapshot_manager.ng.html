@@ -18,15 +18,19 @@ limitations under the License.
 
 <div class="container">
   <!-- The button to take snapshot -->
-  <div class="mat-icon-container take-snapshot"
+  <button type="button" class="mat-icon-container take-snapshot" aria-label="Save view" [disabled]="disableAddSnapshotButton"
       [bubble]="help"
       [overlaySize]="helpPopupSize"
       [hoverDelayMs]="10"
       [class.disabled]="disableAddSnapshotButton"
       (click)="handleClickAddSnapshot()">
-    <mat-icon class="toolbar-icon">bookmark_add</mat-icon>
-  </div>
+    <mat-icon class="toolbar-icon">bookmark_add</mat-icon>Save view
+  </button>
 
+  <button mat-icon-button aria-label="Saved view options" [matMenuTriggerFor]="savedViewMenu"><mat-icon>arrow_drop_down</mat-icon></button>
+  <mat-menu #savedViewMenu="matMenu">
+    <button mat-menu-item (click)="showNamedViewsPrototype()">Name and manage saved views</button>
+  </mat-menu>
   <ng-template #help>
     <div class="model-explorer-help-popup">
       @if (disableAddSnapshotButton) {
@@ -43,7 +47,7 @@ limitations under the License.
 
   <!-- Snapshots list -->
   <div class="snapshots-container" *ngIf="hasSnapshots">
-    <div class="snapshot"
+    <button type="button" class="snapshot" [attr.aria-label]="'Restore view ' + (i+1)"
         *ngFor="let snapshot of curSnapshots; let i = index; trackBy: trackBySnapshotId;"
         [bubble]="snapshotPopup"
         #dialog="bubble"
@@ -58,11 +62,11 @@ limitations under the License.
         <div class="model-explorer-snapshot-popup">
           <div class="info-row">
             <div>Shortcut key: {{i+1}}</div>
-            <div class="icon-container delete"
+            <button type="button" class="icon-container delete"
                 (click)="handleClickDeleteSnapshot(i)">
               <mat-icon>delete</mat-icon>
               Delete
-            </div>
+            </button>
           </div>
           <canvas
               [style.width.px]="getSnapshotCanvasWidth(snapshot, true)"
@@ -70,6 +74,6 @@ limitations under the License.
           </canvas>
         </div>
       </ng-template>
-    </div>
+    </button>
   </div>
 </div>

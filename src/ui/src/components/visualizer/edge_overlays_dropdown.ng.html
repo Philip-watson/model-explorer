@@ -16,25 +16,18 @@ limitations under the License.
 ==============================================================================
 -->
 
-<div class="container"
-    [bubble]="help"
-    [overlaySize]="helpPopupSize"
-    [hoverDelayMs]="10">
-  <div class="mat-icon-container view"
+<div class="container">
+  <button type="button" class="mat-icon-container view" aria-label="Edge overlays"
       [bubbleClick]="edgeOverlaysPopup"
       [overlaySize]="edgeOverlaysPopupSize"
       (opened)="opened=true"
       (closed)="opened=false"
       (click)="handleClickOnEdgeOverlaysButton()">
-    <mat-icon class="toolbar-icon">polyline</mat-icon>
-  </div>
+    <mat-icon class="toolbar-icon">polyline</mat-icon>Edge overlays
+  </button>
 </div>
 
-<ng-template #help>
-  <div class="model-explorer-help-popup">
-    Show custom edge overlays on graph
-  </div>
-</ng-template>
+
 
 <ng-template #edgeOverlaysPopup>
   <div class="model-explorer-edge-overlays-popup">

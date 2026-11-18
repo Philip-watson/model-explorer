@@ -17,7 +17,12 @@
  */
 
 import {CommonModule} from '@angular/common';
-import {ChangeDetectionStrategy, Component} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+} from '@angular/core';
 import {MatIconModule} from '@angular/material/icon';
 
 import {LOCAL_STORAGE_SERVICE_INJECTION_TOKEN} from '../../common/local_storage_service_interface';
@@ -29,6 +34,8 @@ import {NodeDataProviderExtensionService} from './node_data_provider_extension_s
 import {NodeStylerService} from './node_styler_service';
 import {SplitPanesContainer} from './split_panes_container';
 import {SyncNavigationService} from './sync_navigation_service';
+import {isGroupNode, isOpNode} from './common/utils';
+import {NewVersionService} from './new_version_chip';
 import {TitleBar} from './title_bar';
 import {UiStateService} from './ui_state_service';
 import {VisualizerThemeService} from './visualizer_theme_service';
@@ -65,4 +72,15 @@ import {WorkerService} from './worker_service';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ModelGraphVisualizer extends ModelGraphVisualizerBase {}
+export class ModelGraphVisualizer extends ModelGraphVisualizerBase {
+  readonly versionInfo = inject(NewVersionService).info;
+  readonly graphStats = computed(() => {
+    const graph = this.appService.getModelGraphFromSelectedPane();
+    if (!graph) return '';
+    const nodes = graph.nodes.filter(
+      (node) => isOpNode(node) && !node.hideInLayout,
+    ).length;
+    const layers = graph.nodes.filter(isGroupNode).length;
+    return `${nodes} nodes · ${layers} ${layers === 1 ? 'layer' : 'layers'}`;
+  });
+}

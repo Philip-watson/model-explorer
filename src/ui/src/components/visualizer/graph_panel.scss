@@ -44,7 +44,13 @@
   selection-panel {
     position: absolute;
     right: 8px;
-    top: 8px;
+    bottom: 56px;
     overflow: hidden;
   }
+}
+
+.container legends-panel {
+  max-width: calc(100% - 160px);
+  max-height: 25%;
+  overflow: auto;
 }

@@ -16,27 +16,38 @@ limitations under the License.
 ==============================================================================
 -->
 
-<div class="container">
+<div class="container" (keydown.escape)="resultsDismissed = true; searchInput.focus(); $event.stopPropagation()">
   <div class="input-container">
     <mat-icon class="search">search</mat-icon>
-    <input placeholder="Search nodes/layers by regex"
+    <input placeholder="Find nodes or layers" aria-label="Find nodes or layers" [attr.aria-invalid]="!!searchError"
         #searchInput
-        [formControl]="curSearchText">
-    <div class="btn-clear-container" *ngIf="showClearButton"
+        [formControl]="curSearchText" (focus)="resultsDismissed = false">
+    <button type="button" aria-label="Clear search" class="btn-clear-container" *ngIf="showClearButton"
         (click)="handleClickClearSearchText()">
       <mat-icon class="clear">close</mat-icon>
-    </div>
-    <div class="icon-container"
-        [bubble]="helpPopup"
-        [hoverDelayMs]="100">
+    </button>
+    <button type="button" class="icon-container search-help" aria-label="Search help" [bubbleClick]="helpPopup">
       <mat-icon>help_outline</mat-icon>
-    </div>
+    </button>
   </div>
+  <select aria-label="Search scope" [value]="searchScope" #scope (change)="setSearchScope(scope.value)">
+    <option value="names">Names</option><option value="all">All fields</option><option value="custom" disabled>Custom fields</option>
+  </select>
+  <label class="regex-toggle"><input type="checkbox" [checked]="useRegex" (change)="toggleRegex()">Regex</label>
+  <button mat-button [matMenuTriggerFor]="filtersMenu"><mat-icon>filter_list</mat-icon>Filters</button>
+  <mat-menu #filtersMenu="matMenu">
+    @for (option of searchResultTypes; track option) {
+      <button mat-menu-item role="menuitemcheckbox" [attr.aria-checked]="option.selected" (click)="updateSelectedResultTypes(option); $event.stopPropagation()">
+        <mat-icon>{{option.selected ? 'check_box' : 'check_box_outline_blank'}}</mat-icon>{{option.label}}
+      </button>
+    }
+  </mat-menu>
+  @if (searchError) { <div class="search-error" role="alert">{{searchError}}</div> }
   <div class="search-results-container" *ngIf="showResultsPanel"
       [style.max-height.px]="searchResultsContainerMaxHeight">
     <div class="title-container">
       <div class="title">
-        <div class="title-label">
+        <div class="title-label" role="status">
           {{searchResultsTitle}}
         </div>
         @if (showPaginator) {
@@ -48,7 +59,7 @@ limitations under the License.
       <div class="search-result-type-selector-container">
         <div class="options-container">
           @for (option of searchResultTypes; track option) {
-            <div class="option-container"
+            <button type="button" class="option-container" [attr.aria-pressed]="option.selected"
                 [class.selected]="option.selected"
                 (click)="updateSelectedResultTypes(option)">
               <div class="icon-container">
@@ -57,7 +68,7 @@ limitations under the License.
               <div class="option-label">
                 {{option.label}}
               </div>
-            </div>
+            </button>
           }
         </div>
       </div>
@@ -89,6 +100,8 @@ limitations under the License.
 
 <ng-template #helpPopup>
   <div class="model-explorer-search-help-popup">
+    Names searches labels literally. Choose All fields or Filters to include attributes and connections. Turn on Regex to use regular expressions.
+    <br><br>
     Use regex(es) to match nodes by label, attributes, input/output node label,
     and input/output metadata. Regexes separated by spaces are combined using the logical AND.
     <br>

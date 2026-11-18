@@ -16,15 +16,43 @@ limitations under the License.
 ==============================================================================
 -->
 
-<div class="container"
+<div class="container" [hidden]="hide"
     [class.graph-info]="showNodeDataProviderSummary"
     [style.font-size.px]="fontSize">
+  <div class="inspector-header">
+    <div class="inspector-heading">
+      <h2>Inspector</h2>
+      <button mat-button (click)="showDockOptions()">Dock</button>
+      <button mat-icon-button aria-label="Hide inspector" (click)="toggleHideInfoPanel()"><mat-icon>close</mat-icon></button>
+    </div>
+    <div class="selection-heading">
+      <h3>{{selectionLabel}}</h3>
+      @if (curSelectedNodeId) { <p>{{selectionNamespace}} / {{curSelectedNodeId}}</p> }
+    </div>
+    <div class="inspector-tabs" role="tablist" aria-label="Inspector sections" (keydown)="handleTabKey($event)">
+      @for (tab of inspectorTabs; track tab) {
+        <button type="button" role="tab" [attr.id]="'inspector-tab-' + paneId + '-' + tab"
+            [attr.aria-controls]="'inspector-content-' + paneId"
+            [attr.aria-selected]="activeTab === tab" [attr.tabindex]="activeTab === tab ? 0 : -1"
+            (click)="selectTab(tab)">
+          {{tab}} @if (tab === 'inputs') { <span>{{curInputsCount + curGroupInputsCount}}</span> }
+          @if (tab === 'outputs') { <span>{{curOutputsCount + curGroupOutputsCount}}</span> }
+        </button>
+      }
+    </div>
+  </div>
+  <div role="tabpanel" [attr.id]="'inspector-content-' + paneId"
+      [attr.aria-labelledby]="'inspector-tab-' + paneId + '-' + activeTab" tabindex="0">
+    @if (activeTab === 'attributes' && !hasAttributes) { <p class="empty-tab">No attributes for this selection.</p> }
+    @if (activeTab === 'inputs' && inputItems.length === 0 && groupInputItems.length === 0) { <p class="empty-tab">No inputs for this selection.</p> }
+    @if (activeTab === 'outputs' && outputItems.length === 0 && groupOutputItems.length === 0) { <p class="empty-tab">No outputs for this selection.</p> }
+
   @for (section of sections; track section.label) {
     @if (section.items.length > 0) {
-      <div class="section" #sectionEle
+      <div class="section" #sectionEle [hidden]="!showSection(section.label)"
           [class.collapsed]="isSectionCollapsed(section.label)">
         <div class="header" [style.font-size.px]="fontSize - 1">
-          <button mat-icon-button class="toggle"
+          <button mat-icon-button class="toggle" [attr.aria-label]="getSectionDisplayLabel(section.label)" [attr.aria-expanded]="!isSectionCollapsed(section.label)"
               (click)="handleToggleSection(section.label, sectionEle)">
             <mat-icon>{{getSectionToggleIcon(section.label)}}</mat-icon>
           </button>
@@ -106,7 +134,7 @@ limitations under the License.
   }
 
   <!-- Summary for node data provider extensions -->
-  <div class="section" *ngIf="showNodeDataProviderSummary" #ndpSectionEle
+  <div class="section" [hidden]="activeTab !== 'overview'" *ngIf="showNodeDataProviderSummary" #ndpSectionEle
        [class.collapsed]="isSectionCollapsed(SectionLabel.NODE_DATA_PROVIDERS)">
     <div class="header" [style.font-size.px]="fontSize - 1">
       <button mat-icon-button class="toggle"
@@ -122,7 +150,7 @@ limitations under the License.
   </div>
 
   <!-- Inputs -->
-  <div class="section inputs" *ngIf="inputItems.length > 0" #inputsSectionEle
+  <div class="section inputs" [hidden]="activeTab !== 'inputs'" *ngIf="inputItems.length > 0" #inputsSectionEle
        [class.collapsed]="isSectionCollapsed(SectionLabel.INPUTS)">
     <div class="header input" [style.font-size.px]="fontSize - 1">
       <div class="header-label-container">
@@ -143,7 +171,7 @@ limitations under the License.
   </div>
 
   <!-- Outputs -->
-  <div class="section outputs" *ngIf="outputItems.length > 0" #outputsSectionEle
+  <div class="section outputs" [hidden]="activeTab !== 'outputs'" *ngIf="outputItems.length > 0" #outputsSectionEle
        [class.collapsed]="isSectionCollapsed(SectionLabel.OUTPUTS)">
     <div class="header output" [style.font-size.px]="fontSize - 1">
       <div class="header-label-container">
@@ -164,7 +192,7 @@ limitations under the License.
   </div>
 
   <!-- Identical groups -->
-  <div class="section" *ngIf="identicalGroupsData" #identicalGroupsSectionEle
+  <div class="section" [hidden]="activeTab !== 'overview'" *ngIf="identicalGroupsData" #identicalGroupsSectionEle
        [class.collapsed]="isSectionCollapsed(SectionLabel.IDENTICAL_GROUPS)">
     <div class="header identical-groups" [style.font-size.px]="fontSize - 1">
       <div class="header-label-container">
@@ -185,7 +213,7 @@ limitations under the License.
   </div>
 
   <!-- Group inputs -->
-  <div class="section inputs" *ngIf="groupInputItems.length > 0" #groupInputsSectionEle
+  <div class="section inputs" [hidden]="activeTab !== 'inputs'" *ngIf="groupInputItems.length > 0" #groupInputsSectionEle
         [class.collapsed]="isSectionCollapsed(SectionLabel.GROUP_INPUTS)">
     <div class="header input" [style.font-size.px]="fontSize - 1">
       <div class="header-label-container">
@@ -206,7 +234,7 @@ limitations under the License.
   </div>
 
   <!-- Group outputs -->
-  <div class="section outputs" *ngIf="groupOutputItems.length > 0" #groupOutputsSectionEle
+  <div class="section outputs" [hidden]="activeTab !== 'outputs'" *ngIf="groupOutputItems.length > 0" #groupOutputsSectionEle
         [class.collapsed]="isSectionCollapsed(SectionLabel.GROUP_OUTPUTS)">
     <div class="header output" [style.font-size.px]="fontSize - 1">
       <div class="header-label-container">
@@ -225,18 +253,19 @@ limitations under the License.
     <ng-container *ngTemplateOutlet="outputItemsTmpl;context:{'items': groupOutputItemsForCurPage}">
     </ng-container>
   </div>
+  </div>
 </div>
 
 <!-- Resizer -->
-<div class="resizer" [class.resizing]="resizing"
+<div class="resizer" [hidden]="hide" [class.resizing]="resizing" role="separator" tabindex="0"
+    aria-label="Resize inspector" aria-orientation="vertical" [attr.aria-valuenow]="width"
+    (keydown.arrowleft)="resizeBy(32); $event.preventDefault()" (keydown.arrowright)="resizeBy(-32); $event.preventDefault()"
     (mousedown)="handleMouseDownResizer($event)">
 </div>
 
 <!-- A toggle to hide/show side panel -->
-<div class="hide-toggle" [matTooltip]="hideToggleTooltip"
-    (click)="toggleHideInfoPanel()">
-  <mat-icon>{{hideToggleIconName}}</mat-icon>
-</div>
+<button type="button" class="hide-toggle" [hidden]="!hide || !showRestoreButton" aria-label="Show inspector"
+    (click)="toggleHideInfoPanel()"><mat-icon>dock_to_left</mat-icon>Inspector</button>
 
 <ng-template #namespaceHierarchy let-value="value">
   <div class="values-count-msg">

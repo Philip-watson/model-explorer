@@ -34,11 +34,11 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {MatMenuModule} from '@angular/material/menu';
 import {MatTooltipModule} from '@angular/material/tooltip';
-import {Bubble} from '../bubble/bubble';
 import {AppService} from './app_service';
 import {type ModelGraph} from './common/model_graph';
 import {
   PopupPanelData,
+  RendererOwner,
   SelectedNodeInfo,
   SubgraphBreadcrumbItem,
 } from './common/types';
@@ -49,13 +49,13 @@ import {SnapshotManager} from './snapshot_manager';
 import {SubgraphBreadcrumbs} from './subgraph_breadcrumbs';
 import {ViewOnNode} from './view_on_node';
 import {WebglRenderer} from './webgl_renderer';
+import {SplitPaneService} from './split_pane_service';
 
 /** A wrapper panel around various renderers. */
 @Component({
   standalone: true,
   selector: 'renderer-wrapper',
   imports: [
-    Bubble,
     CommonModule,
     EdgeOverlaysDropdown,
     MatButtonModule,
@@ -101,6 +101,7 @@ export class RendererWrapper {
   constructor(
     private readonly appService: AppService,
     private readonly changeDetectorRef: ChangeDetectorRef,
+    readonly splitPaneService: SplitPaneService,
   ) {
     effect(() => {
       const pane = this.appService.getPaneById(this.paneId);
@@ -113,8 +114,23 @@ export class RendererWrapper {
     this.openInPopupClicked.emit(data);
   }
 
+  activateRenderer() {
+    this.appService.curSelectedRenderer.set({
+      id: this.rendererId,
+      ownerType: this.inPopup ? RendererOwner.POPUP : RendererOwner.GRAPH_PANEL,
+    });
+  }
+
   handleClickZoomFitIcon() {
-    this.appService.spaceKeyToZoomFitClicked.next({});
+    this.webglRenderer?.webglRendererThreejsService.zoomFitGraph();
+  }
+
+  zoom(factor: number) {
+    this.webglRenderer?.setZoomFactor(factor);
+  }
+
+  get showInspectorToggle(): boolean {
+    return !this.inPopup && this.appService.config()?.hideInfoPanel !== true;
   }
 
   handleClickExpandAllLayers() {
@@ -198,11 +214,11 @@ export class RendererWrapper {
   }
 
   get showDownloadPng(): boolean {
-    return !this.inPopup;
+    return !this.inPopup && this.appService.config()?.hideTitleBar === true;
   }
 
   get showSnapshotManager(): boolean {
-    return !this.inPopup;
+    return !this.inPopup && this.appService.config()?.hideTitleBar === true;
   }
 
   get showSubgraphBreadcrumbs(): boolean {
@@ -218,6 +234,11 @@ export class RendererWrapper {
 
   get disableExpandCollapseAllButton(): boolean {
     return this.appService.getFlattenLayers(this.paneId);
+  }
+
+  get canTrace(): boolean {
+    const selection = this.getActiveSelectedNodeInfo();
+    return !!selection?.nodeId && !selection.isGroupNode;
   }
 
   get tracing(): boolean {

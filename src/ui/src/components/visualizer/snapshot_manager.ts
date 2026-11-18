@@ -29,6 +29,10 @@ import {
   QueryList,
   ViewChildren,
 } from '@angular/core';
+import {MatButtonModule} from '@angular/material/button';
+import {MatDialog} from '@angular/material/dialog';
+import {MatMenuModule} from '@angular/material/menu';
+import {PrototypeFeatureDialog} from '../prototype_feature_dialog/prototype_feature_dialog';
 import {MatIconModule} from '@angular/material/icon';
 import {MatTooltipModule} from '@angular/material/tooltip';
 
@@ -48,7 +52,14 @@ const NUMBERS = new Set<string>(['1', '2', '3', '4', '5', '6', '7', '8', '9']);
 @Component({
   standalone: true,
   selector: 'snapshot-manager',
-  imports: [Bubble, CommonModule, MatIconModule, MatTooltipModule],
+  imports: [
+    Bubble,
+    CommonModule,
+    MatButtonModule,
+    MatMenuModule,
+    MatIconModule,
+    MatTooltipModule,
+  ],
   templateUrl: './snapshot_manager.ng.html',
   styleUrls: ['./snapshot_manager.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -86,6 +97,7 @@ export class SnapshotManager {
   private curModelGraph?: ModelGraph;
 
   constructor(
+    private readonly dialog: MatDialog,
     private readonly appService: AppService,
     private readonly changeDetectorRef: ChangeDetectorRef,
   ) {
@@ -96,6 +108,17 @@ export class SnapshotManager {
         this.curSnapshots = (pane?.snapshots || {})[pane.modelGraph.id] || [];
         this.changeDetectorRef.markForCheck();
       }
+    });
+  }
+
+  showNamedViewsPrototype() {
+    this.dialog.open(PrototypeFeatureDialog, {
+      width: '480px',
+      data: {
+        title: 'Named saved views',
+        description:
+          'Naming views and keeping them between sessions are planned. You can already save and restore up to nine numbered views during this session.',
+      },
     });
   }
 

@@ -95,7 +95,8 @@
   }
 
   title-bar {
-    height: 48px;
+    flex-shrink: 0;
+    height: auto;
     min-height: 48px;
   }
 
@@ -188,4 +189,22 @@
       color: var(--me-primary-inverse-color) !important;
     }
   }
+}
+
+.workbench-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 16px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  border-top: 1px solid var(--me-outline-hairline-color);
+  background: var(--me-surface-container-low-color);
+  color: var(--me-on-surface-variant-color);
+  font-size: 12px;
+}
+.navigation-hint {
+  margin-left: auto;
 }

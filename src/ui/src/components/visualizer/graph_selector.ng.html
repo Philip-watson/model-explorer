@@ -19,11 +19,11 @@ limitations under the License.
 <div class="container">
   <!-- The collection label. -->
   <div class="collection-label">
-    {{selectedGraphCollectionLabel}}
+    {{displayCollectionLabel}}
   </div>
 
   <!-- Currently selected graph. -->
-  <div class="graph-selector-label" #selector
+  <button type="button" aria-label="Choose model and graph" class="graph-selector-label" #selector
        (click)="handleClickOpenGraphDropdown(selector)">
     <div class="selector-label-container">
       <div class="selector-label-content">
@@ -34,8 +34,9 @@ limitations under the License.
       </div>
       <div class="triangle">▼</div>
     </div>
-  </div>
+  </button>
 
+  @if (!hideExportButtons) {
   <div class="mat-icon-container" matTooltip="Download processed graphs json"
       (click)="handleClickDownloadGraphJson()">
     <mat-icon>download</mat-icon>
@@ -48,11 +49,12 @@ limitations under the License.
     </div>
   }
 
+  }
   <!--
     A hidden mat-select. It is here so that clicking the currently selected
     label can open the dropdown menu provided by this mat-select.
   -->
-  <mat-form-field class="select-form">
+  <mat-form-field class="select-form" style="display:none">
     <mat-label>Select an option</mat-label>
     <mat-select color="primary" panelClass="graph-selector-panel"
         [formControl]="selectedGraph"

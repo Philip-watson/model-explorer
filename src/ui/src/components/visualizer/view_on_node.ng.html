@@ -16,18 +16,15 @@ limitations under the License.
 ==============================================================================
 -->
 
-<div class="container"
-    [bubble]="help"
-    [overlaySize]="helpPopupSize"
-    [hoverDelayMs]="10">
-  <div class="mat-icon-container view"
+<div class="container">
+  <button type="button" class="mat-icon-container view" aria-label="Display"
       [bubbleClick]="viewPopup"
       [overlaySize]="viewPopupSize"
       (opened)="opened=true"
       (closed)="opened=false"
       (click)="handleClickOnViewOnNode($event)">
-    <mat-icon class="toolbar-icon">visibility</mat-icon>
-  </div>
+    <mat-icon class="toolbar-icon">visibility</mat-icon>Display
+  </button>
 </div>
 
 <ng-template #help>

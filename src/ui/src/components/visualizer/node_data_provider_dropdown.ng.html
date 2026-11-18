@@ -18,7 +18,7 @@ limitations under the License.
 
 <div class="container"
     matTooltip="Style nodes with custom data">
-  <div class="icon-container"
+  <button type="button" class="icon-container" aria-label="Add data"
       [bubbleClick]="dropdown"
       [overlaySize]="dropdownSize">
     @if (remoteSourceLoading() || hasExtensionRunning()) {
@@ -27,14 +27,14 @@ limitations under the License.
     } @else {
       <mat-icon>add_circle_outline</mat-icon>
     }
-    <span class="label">Add per-node data</span>
-  </div>
+    <span class="label">Add data</span>
+  </button>
 </div>
 
 <ng-template #dropdown>
   <div class="model-explorer-node-data-provider-dropdown">
     <div class="section-label upload">
-      <div>Load json data file</div>
+      <div>Node values (JSON)</div>
       <a href="https://github.com/google-ai-edge/model-explorer/wiki/2.-User-Guide#custom-node-data"
          target="_blank">
          Guide
@@ -55,7 +55,7 @@ limitations under the License.
         (change)="handleClickUpload(input)">
 
     <div class="section-label extensions">
-      <div>Extensions</div>
+      <div>Node-data extensions</div>
       <a href="https://github.com/google-ai-edge/model-explorer/wiki/"
         target="_blank">
         Guide

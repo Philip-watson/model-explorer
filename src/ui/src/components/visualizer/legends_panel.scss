@@ -113,3 +113,13 @@ $block_height: 14px;
     }
   }
 }
+
+.container table {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+.container table tr {
+  display: flex;
+  align-items: center;
+}

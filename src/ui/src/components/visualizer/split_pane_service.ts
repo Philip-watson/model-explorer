@@ -21,6 +21,8 @@ import {Injectable, signal} from '@angular/core';
 /** A service for managing data scoped within a single split pane. */
 @Injectable()
 export class SplitPaneService {
+  readonly inspectorHidden = signal(false);
+
   /**
    * The input op node ids that are hidden (i.e. not highlighted) in the
    * model graph.

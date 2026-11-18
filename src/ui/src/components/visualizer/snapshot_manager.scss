@@ -123,3 +123,34 @@
     }
   }
 }
+
+.container button.take-snapshot {
+  width: auto;
+  height: 36px;
+  padding: 0 10px;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--me-on-surface-color);
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.container button.snapshot {
+  font: inherit;
+  color: var(--me-on-surface-color);
+  cursor: pointer;
+}
+
+.container {
+  flex-wrap: wrap;
+}
+.snapshots-container {
+  flex-wrap: wrap;
+}
+::ng-deep .model-explorer-snapshot-popup button.delete {
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+}

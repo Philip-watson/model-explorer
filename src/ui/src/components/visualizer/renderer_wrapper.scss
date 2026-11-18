@@ -16,156 +16,67 @@
  * ==============================================================================
  */
 
+:host {
+  display: block;
+  min-width: 0;
+  min-height: 0;
+}
 .container {
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   position: relative;
-
-  svg-rednerer,
-  webgl-rednerer {
-    width: 100%;
-    height: 100%;
+  overflow: hidden;
+}
+.toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--me-outline-hairline-color);
+  background: var(--me-surface-color);
+  color: var(--me-on-surface-color);
+  z-index: 20;
+  search-bar {
+    flex: 1 1 360px;
+    min-width: 0;
+    max-width: 560px;
   }
-
-  .toolbar {
-    position: absolute;
-    top: 8px;
-    left: 12px;
-    padding: 0 8px 0 6px;
-    box-sizing: border-box;
-    height: 40px;
-    display: flex;
-    color: var(--me-on-surface-color);
-    background-color: var(--me-surface-container-high-color);
-    border-radius: 99px;
-    align-items: center;
-    outline: 2px solid var(--me-surface-color);
-
-    &.in-popup {
-      padding-left: 10px;
-    }
-
-    &:has(search-bar::ng-deep input:focus) {
-      border-color: var(--me-primary-color);
-    }
-
-    search-bar {
-      margin-right: 4px;
-    }
-
-    &.pushed-down {
-      top: 44px;
-    }
-
-    .mat-icon-container {
-      width: 24px;
-      height: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      &.enabled {
-        background-color: var(--me-warning-container-color);
-        outline: 1px solid var(--me-warning-text-color);
-        border-radius: 4px;
-      }
-
-      &.disable {
-        opacity: 0.2;
-        pointer-events: none;
-      }
-    }
-
-    mat-icon.toolbar-icon {
-      font-size: 20px;
-      width: 20px;
-      height: 20px;
-      cursor: pointer;
-      opacity: 0.85;
-
-      &:hover {
-        opacity: 1;
-      }
-
-      &.expand-all,
-      &.collapse-all {
-        font-size: 18px;
-        width: 18px;
-        height: 18px;
-      }
-
-      &.flatten-layers {
-        font-size: 20px;
-        width: 20px;
-        height: 20px;
-        border: 1px solid transparent;
-      }
-
-      &.trace {
-        transform: rotate(90deg);
-        border: 1px solid transparent;
-      }
-    }
-
-    .vertical-divider {
-      width: 1px;
-      border-left: 1px solid var(--me-outline-variant-color);
-      margin: 2px 5px;
-      height: 20px;
-    }
-
-    edge-overlays-dropdown {
-      margin-left: 4px;
-    }
+  button {
+    flex-shrink: 0;
   }
-
-  subgraph-breadcrumbs {
-    position: absolute;
-    top: 8px;
-    left: 12px;
+  .enabled {
+    background: var(--me-warning-container-color);
+    color: var(--me-warning-text-color);
+  }
+  .inspector-toggle {
+    margin-left: auto;
   }
 }
-
-::ng-deep bubble-container:has(.model-explorer-view-popup) {
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
+webgl-renderer {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: block;
 }
-
-::ng-deep .model-explorer-download-png-menu {
-  /* stylelint-disable-next-line declaration-no-important -- override MDC */
-  color: var(--me-on-surface-color) !important;
-  /* stylelint-disable-next-line declaration-no-important -- override MDC */
-  background-color: var(--me-surface-container-low-color) !important;
-
-  .menu-item {
-    /* stylelint-disable-next-line declaration-no-important -- override MDC */
-    letter-spacing: normal !important;
-    /* stylelint-disable-next-line declaration-no-important -- override MDC */
-    font-family: 'Google Sans Text', Arial, Helvetica, sans-serif !important;
-    font-size: 12px;
+subgraph-breadcrumbs {
+  flex-shrink: 0;
+  min-height: 32px;
+}
+.canvas-navigation {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  z-index: 10;
+  background: var(--me-surface-color);
+  border: 1px solid var(--me-outline-variant-color);
+  border-radius: 6px;
+  button {
+    min-width: 36px;
     padding: 0 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-
-    &:hover {
-      background-color: var(--me-surface-container-high-color);
-    }
-  }
-
-  .transparent-background-toggle {
-    display: flex;
-    align-items: center;
-    font-size: 12px;
-    letter-spacing: normal;
-    padding: 6px 8px 0 4px;
-    border-top: 1px solid var(--me-outline-variant-color);
-    margin-top: 8px;
-    cursor: pointer;
-
-    input {
-      cursor: inherit;
-    }
   }
 }

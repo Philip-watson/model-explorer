@@ -25,7 +25,9 @@ import {
   inject,
 } from '@angular/core';
 import {MatButtonModule} from '@angular/material/button';
-import {MatDialog} from '@angular/material/dialog';
+import {MatDialog, MatDialogModule} from '@angular/material/dialog';
+import {MatMenuModule} from '@angular/material/menu';
+import {SnapshotManager} from './snapshot_manager';
 import {MatIconModule} from '@angular/material/icon';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatSnackBar} from '@angular/material/snack-bar';
@@ -60,6 +62,9 @@ let ndpId = 0;
     GraphSelector,
     Logo,
     MatButtonModule,
+    MatDialogModule,
+    MatMenuModule,
+    SnapshotManager,
     MatIconModule,
     MatTooltipModule,
     MatProgressSpinnerModule,
@@ -76,8 +81,8 @@ export class TitleBar {
   @Output() readonly titleClicked = new EventEmitter<void>();
   @Output() readonly nodeStylerOpened = new EventEmitter<void>();
 
-  private readonly appService = inject(AppService);
-  private readonly dialog = inject(MatDialog);
+  readonly appService = inject(AppService);
+  readonly dialog = inject(MatDialog);
   private readonly nodeDataProviderExtensionService = inject(
     NodeDataProviderExtensionService,
   );
@@ -85,6 +90,15 @@ export class TitleBar {
   private readonly snackBar = inject(MatSnackBar);
 
   readonly processing = this.appService.processing;
+  transparentBackground = false;
+
+  exportImage(fullGraph: boolean) {
+    this.appService.downloadAsPngClicked.next({
+      rendererId: this.appService.selectedPaneId(),
+      fullGraph,
+      transparentBackground: this.transparentBackground,
+    });
+  }
 
   handleOpenNdpExtensionDialogClicked(extension: NodeDataProviderExtension) {
     // Show run task dialog.

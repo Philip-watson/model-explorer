@@ -178,6 +178,11 @@ export class SplitPanesContainer implements AfterViewInit {
     );
   }
 
+  handleFocusPane(paneId: string) {
+    if (paneId !== this.appService.selectedPaneId())
+      this.appService.selectPane(paneId);
+  }
+
   handleClickSwapPane() {
     this.appService.swapPane();
   }
@@ -191,7 +196,7 @@ export class SplitPanesContainer implements AfterViewInit {
     if (!modelGraph) {
       return '-';
     }
-    return `${modelGraph.collectionLabel} | ${modelGraph.id}`;
+    return `${modelGraph.collectionLabel.replace(/^(.*?) \(\1\)$/, '$1')} | ${modelGraph.id}`;
   }
 
   handleMouseDownResizer(event: MouseEvent, panesContainer: HTMLElement) {

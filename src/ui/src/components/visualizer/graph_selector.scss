@@ -229,3 +229,16 @@
     }
   }
 }
+
+.collection-label {
+  overflow-wrap: anywhere;
+}
+button.graph-selector-label {
+  font: inherit;
+  color: inherit;
+  background: var(--me-surface-color);
+  border: 1px solid var(--me-outline-variant-color);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+}

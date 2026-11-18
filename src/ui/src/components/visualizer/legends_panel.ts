@@ -147,7 +147,10 @@ export class LegendsPanel {
   }
 
   get hideShortcuts(): boolean {
-    return this.appService.config()?.legendConfig?.hideShortcuts ?? false;
+    return (
+      this.appService.config()?.legendConfig?.hideShortcuts ??
+      this.appService.config()?.hideTitleBar !== true
+    );
   }
 
   get customLegendItems(): CustomLegendItem[] {

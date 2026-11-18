@@ -33,7 +33,6 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {LOCAL_STORAGE_SERVICE_INJECTION_TOKEN} from '../../common/local_storage_service_interface';
-import {Bubble} from '../bubble/bubble';
 import {BubbleClick} from '../bubble/bubble_click';
 import {AppService} from './app_service';
 import {ProcessedEdgeOverlay} from './common/edge_overlays';
@@ -57,7 +56,6 @@ interface OverlayItem {
   standalone: true,
   selector: 'edge-overlays-dropdown',
   imports: [
-    Bubble,
     BubbleClick,
     CommonModule,
     MatButtonModule,
