@@ -81,7 +81,7 @@ def matched_images(
 
 
 def delay_view_model(page: Page):
-  page.get_by_role("button", name="View selected models").click()
+  page.get_by_role("button", name=re.compile(r"^Open models?$")).click()
   time.sleep(2)  # Delay for the animation
 
 
@@ -96,13 +96,24 @@ def select_dark_theme(page: Page):
   # For example, when in the graph view, the home page's theme picker remains
   # in the DOM but is hidden, meaning the last element is the active and
   # visible one.
-  page.locator(".theme-picker-btn").last.click()
-  page.get_by_text("Dark mode").click()
+  if page.locator("model-graph-visualizer").is_visible():
+    page.locator(".theme-picker-btn").last.click()
+    page.get_by_text("Dark mode").click()
+  else:
+    page.get_by_role("button", name="Settings", exact=True).click()
+    page.get_by_label("Appearance").select_option("dark")
+    page.get_by_role("dialog").get_by_role("button", name="Close").click()
 
 
 def delay_take_screenshot(page: Page, file_path: Path):
   time.sleep(2)  # Delay for the animation
-  page.screenshot(path=file_path)
+  # The dev-server address varies between local review and CI.
+  style = (
+      "launcher-environment section:last-child p { visibility: hidden; }"
+      if file_path.name.startswith("homepage")
+      else None
+  )
+  page.screenshot(path=file_path, style=style)
 
 
 def take_and_compare_screenshot(page: Page, name: str):
@@ -113,6 +124,40 @@ def take_and_compare_screenshot(page: Page, name: str):
 
 
 def test_homepage(page: Page):
+  # Keep launch-screen screenshots independent of installed custom extensions
+  # and the latest published server version.
+  page.route(
+      "**/api/v1/check_new_version",
+      lambda route: route.fulfill(
+          json={
+              "runningVersion": "0.1.30",
+              "version": "",
+              "releaseUrl": "",
+              "desktopAppUrl": "",
+          }
+      ),
+  )
+  page.route(
+      "**/api/v1/get_extensions",
+      lambda route: route.fulfill(
+          json=[
+              {
+                  "type": "adapter",
+                  "id": "builtin_tflite_flatbuffer",
+                  "name": "TFLite adapter (Flatbuffer)",
+                  "description": "A built-in TFLite adapter.",
+                  "fileExts": ["tflite"],
+              },
+              {
+                  "type": "adapter",
+                  "id": "builtin_json",
+                  "name": "JSON adapter",
+                  "description": "Loads model graph JSON.",
+                  "fileExts": ["json"],
+              },
+          ]
+      ),
+  )
   page.goto(with_token(LOCAL_SERVER))
   expect(page).to_have_title(re.compile("Model Explorer"))
   take_and_compare_screenshot(page, "homepage.png")
@@ -123,7 +168,7 @@ def test_homepage(page: Page):
 
 def test_litert_direct_adapter(page: Page):
   page.goto(with_token(LOCAL_SERVER))
-  page.get_by_placeholder("Absolute file paths (").fill(
+  page.get_by_role("combobox", name="Path on this server").fill(
       str(TEST_FILES_DIR / "fully_connected.tflite")
   )
   page.get_by_role("button", name="Add").click()
@@ -140,7 +185,7 @@ def test_litert_direct_adapter(page: Page):
 
 def test_litert_mlir_adapter(page: Page):
   page.goto(with_token(LOCAL_SERVER))
-  page.get_by_placeholder("Absolute file paths (").fill(
+  page.get_by_role("combobox", name="Path on this server").fill(
       str(TEST_FILES_DIR / "fully_connected.tflite")
   )
   page.get_by_role("button", name="Add").click()
@@ -154,7 +199,7 @@ def test_litert_mlir_adapter(page: Page):
 
 def test_tf_mlir_adapter(page: Page):
   page.goto(with_token(LOCAL_SERVER))
-  page.get_by_placeholder("Absolute file paths (").fill(
+  page.get_by_role("combobox", name="Path on this server").fill(
       str(TEST_FILES_DIR / "simple_add/saved_model.pb")
   )
   page.get_by_role("button", name="Add").click()
@@ -168,7 +213,7 @@ def test_tf_mlir_adapter(page: Page):
 
 def test_tf_direct_adapter(page: Page):
   page.goto(with_token(LOCAL_SERVER))
-  page.get_by_placeholder("Absolute file paths (").fill(
+  page.get_by_role("combobox", name="Path on this server").fill(
       str(TEST_FILES_DIR / "simple_add/saved_model.pb")
   )
   page.get_by_role("button", name="Add").click()
@@ -184,7 +229,7 @@ def test_tf_direct_adapter(page: Page):
 
 def test_tf_graphdef_adapter(page: Page):
   page.goto(with_token(LOCAL_SERVER))
-  page.get_by_placeholder("Absolute file paths (").fill(
+  page.get_by_role("combobox", name="Path on this server").fill(
       str(TEST_FILES_DIR / "graphdef_foo.pbtxt")
   )
   page.get_by_role("button", name="Add").click()
@@ -196,7 +241,7 @@ def test_tf_graphdef_adapter(page: Page):
 
 def test_shlo_mlir_adapter(page: Page):
   page.goto(with_token(LOCAL_SERVER))
-  page.get_by_placeholder("Absolute file paths (").fill(
+  page.get_by_role("combobox", name="Path on this server").fill(
       str(TEST_FILES_DIR / "stablehlo_sin.mlir")
   )
   page.get_by_role("button", name="Add").click()
@@ -218,7 +263,7 @@ def test_pytorch(page: Page):
 
   # Load into ME.
   page.goto(with_token(LOCAL_SERVER))
-  page.get_by_placeholder("Absolute file paths (").fill(pt2_file_path)
+  page.get_by_role("combobox", name="Path on this server").fill(pt2_file_path)
   page.get_by_role("button", name="Add").click()
   delay_view_model(page)
   page.locator("canvas").first.click(position={"x": 458, "y": 334})
@@ -229,7 +274,7 @@ def test_pytorch(page: Page):
 def test_reuse_server_non_pytorch(page: Page):
   # Load a tflite model
   page.goto(with_token(LOCAL_SERVER))
-  page.get_by_placeholder("Absolute file paths (").fill(
+  page.get_by_role("combobox", name="Path on this server").fill(
       str(TEST_FILES_DIR / "fully_connected.tflite")
   )
   page.get_by_role("button", name="Add").click()
@@ -248,7 +293,7 @@ def test_reuse_server_non_pytorch(page: Page):
 def test_reuse_server_pytorch(page: Page):
   # Load a tflite model
   page.goto(with_token(LOCAL_SERVER))
-  page.get_by_placeholder("Absolute file paths (").fill(
+  page.get_by_role("combobox", name="Path on this server").fill(
       str(TEST_FILES_DIR / "fully_connected.tflite")
   )
   page.get_by_role("button", name="Add").click()
@@ -269,7 +314,7 @@ def test_reuse_server_pytorch(page: Page):
 def test_reuse_server_pytorch_from_config(page: Page):
   # Load a tflite model
   page.goto(with_token(LOCAL_SERVER))
-  page.get_by_placeholder("Absolute file paths (").fill(
+  page.get_by_role("combobox", name="Path on this server").fill(
       str(TEST_FILES_DIR / "fully_connected.tflite")
   )
   page.get_by_role("button", name="Add").click()
@@ -297,7 +342,9 @@ def test_reuse_server_two_pytorch_models(page: Page):
 
   # Load it into ME.
   page.goto(with_token(LOCAL_SERVER))
-  page.get_by_placeholder("Absolute file paths (").fill(pt2_file_path.name)
+  page.get_by_role("combobox", name="Path on this server").fill(
+      pt2_file_path.name
+  )
   page.get_by_role("button", name="Add").click()
   delay_view_model(page)
 
@@ -390,7 +437,7 @@ def test_hot_reload_from_ui(page: Page):
   page.goto(with_token("http://127.0.0.1:8082/", port=8082))
 
   # Fill in absolute model path.
-  page.get_by_placeholder("Absolute file paths (").fill(
+  page.get_by_role("combobox", name="Path on this server").fill(
       str(TEST_FILES_DIR / "test_graph2.json")
   )
   page.get_by_role("button", name="Add").click()

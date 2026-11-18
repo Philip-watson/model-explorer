@@ -44,6 +44,7 @@ const EXTERNAL_SEND_CMD_POST_API_PATH = '/apipost/v1/send_command';
 @Injectable({providedIn: 'root'})
 export class ExtensionService {
   readonly loading = signal<boolean>(true);
+  readonly loadError = signal<string | undefined>(undefined);
   readonly internalColab = INTERNAL_COLAB;
 
   extensions: Extension[] = [];
@@ -149,12 +150,14 @@ export class ExtensionService {
         credentials: 'include',
       });
       if (!resp.ok) {
+        this.loadError.set(`Could not load extensions (HTTP ${resp.status}).`);
         console.error(`Failed to get extensions: ${resp.status}`);
         return [];
       }
       const json = await resp.json();
       return json as Extension[];
     } catch (e) {
+      this.loadError.set('Could not load extensions from the server.');
       console.error('Failed to get extensions.', e);
       return [];
     }

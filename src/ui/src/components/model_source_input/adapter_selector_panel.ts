@@ -17,6 +17,7 @@
  */
 
 import {animate, state, style, transition, trigger} from '@angular/animations';
+import {A11yModule} from '@angular/cdk/a11y';
 import {CommonModule} from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -39,6 +40,7 @@ import {type AdapterExtension} from '../../common/types';
   standalone: true,
   selector: 'adapter-selector-panel',
   imports: [
+    A11yModule,
     CommonModule,
     MatFormFieldModule,
     MatIconModule,

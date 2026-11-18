@@ -167,3 +167,7 @@ cython_debug/
 # Bazel
 /bazel-*
 MODULE.bazel.lock
+
+# Local UI review artifacts
+.playwright-cli/
+output/playwright/

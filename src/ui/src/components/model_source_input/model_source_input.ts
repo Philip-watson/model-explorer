@@ -16,26 +16,21 @@
  * ==============================================================================
  */
 
-import {
-  ConnectedPosition,
-  Overlay,
-  OverlayConfig,
-  OverlayRef,
-  OverlaySizeConfig,
-} from '@angular/cdk/overlay';
+import {Overlay, OverlayConfig, OverlayRef} from '@angular/cdk/overlay';
 import {ComponentPortal} from '@angular/cdk/portal';
 import {CommonModule} from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  computed,
   DestroyRef,
   ElementRef,
+  EventEmitter,
+  Input,
+  Output,
   Inject,
   inject,
   signal,
-  Signal,
   ViewChild,
   ViewContainerRef,
 } from '@angular/core';
@@ -62,13 +57,10 @@ import {IS_EXTERNAL} from '../../common/flags';
 import {LOCAL_STORAGE_SERVICE_INJECTION_TOKEN} from '../../common/local_storage_service_interface';
 import {type ModelLoaderServiceInterface} from '../../common/model_loader_service_interface';
 import {
-  AdapterExtension,
-  ExtensionType,
   InternalAdapterExtId,
   ModelItem,
   ModelItemStatus,
   ModelItemType,
-  NodeDataProviderExtension,
 } from '../../common/types';
 import {
   getElectronApi,
@@ -76,9 +68,8 @@ import {
   isInternalStoragePath,
 } from '../../common/utils';
 import {AdapterExtensionService} from '../../services/adapter_extension_service';
-import {ExtensionService} from '../../services/extension_service';
 import {ModelSource, UrlService} from '../../services/url_service';
-import {Bubble} from '../bubble/bubble';
+import {LauncherEnvironment} from '../launcher_environment/launcher_environment';
 
 import {AdapterSelectorPanel} from './adapter_selector_panel';
 import {getAdapterCandidates} from './utils';
@@ -99,7 +90,7 @@ const MAX_SAVED_MODEL_PATHS_COUNT = 50;
   selector: 'model-source-input',
   standalone: true,
   imports: [
-    Bubble,
+    LauncherEnvironment,
     CommonModule,
     MatAutocompleteModule,
     MatButtonModule,
@@ -116,6 +107,52 @@ const MAX_SAVED_MODEL_PATHS_COUNT = 50;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ModelSourceInput {
+  @Input() showWelcome = true;
+  @Output() readonly dismissWelcome = new EventEmitter<void>();
+  readonly copyStatus = signal('');
+
+  getModelName(item: ModelItem): string {
+    return item.path.split(/[\\/]/).filter(Boolean).pop() || item.path;
+  }
+
+  getSourceDescription(item: ModelItem): string {
+    return item.file
+      ? 'From your computer'
+      : item.type === ModelItemType.FILE_PATH
+        ? 'Path on this server'
+        : 'From server';
+  }
+
+  get hasModelErrors(): boolean {
+    return this.modelItems.some((item) => this.hasError(item));
+  }
+
+  retryModel(item: ModelItem) {
+    if (this.loading()) return;
+    item.errorMessage = undefined;
+    item.status.set(ModelItemStatus.NOT_STARTED);
+    item.selected = true;
+    this.handleClickViewSelectedModels();
+  }
+
+  async copyModelDetails(item: ModelItem) {
+    try {
+      await navigator.clipboard.writeText(
+        [
+          `Model: ${item.path}`,
+          `Adapter: ${this.getSelectedAdapterName(item)}`,
+          `Status: ${this.getModelItemStatusString(item)}`,
+          item.errorMessage ? `Error: ${item.errorMessage}` : '',
+        ]
+          .filter(Boolean)
+          .join('\n'),
+      );
+      this.copyStatus.set('Model details copied.');
+    } catch {
+      this.copyStatus.set('Could not copy. Select and copy the details above.');
+    }
+  }
+
   @ViewChild('modelPathInput') modelPathInput!: ElementRef<HTMLInputElement>;
   @ViewChild(MatAutocompleteTrigger)
   matAutocompleteTrigger?: MatAutocompleteTrigger;
@@ -130,54 +167,9 @@ export class ModelSourceInput {
 
   readonly ModelItemStatus = ModelItemStatus;
 
-  readonly modelFormatHelpPopupSize: OverlaySizeConfig = {
-    maxWidth: 400,
-    minHeight: 0,
-  };
-
-  readonly errorInfoPopupSize: OverlaySizeConfig = {
-    minHeight: 0,
-  };
-
-  readonly adapterHelpPopupPosition: ConnectedPosition[] = [
-    {
-      originX: 'start',
-      originY: 'top',
-      overlayX: 'start',
-      overlayY: 'bottom',
-      offsetY: -4,
-    },
-  ];
-
   readonly loading = signal<boolean>(false);
   readonly hasUploadedModels = signal<boolean>(false);
   readonly internalColab = INTERNAL_COLAB;
-
-  readonly customAdapterExtensions: Signal<AdapterExtension[]> = computed(
-    () => {
-      if (this.extensionService.loading()) {
-        return [];
-      }
-      return this.extensionService
-        .getCustomExtensions()
-        .filter(
-          (ext) => ext.type === ExtensionType.ADAPTER,
-        ) as AdapterExtension[];
-    },
-  );
-
-  readonly customNdpExtensions: Signal<NodeDataProviderExtension[]> = computed(
-    () => {
-      if (this.extensionService.loading()) {
-        return [];
-      }
-      return this.extensionService
-        .getCustomExtensions()
-        .filter(
-          (ext) => ext.type === ExtensionType.NODE_DATA_PROVIDER,
-        ) as NodeDataProviderExtension[];
-    },
-  );
 
   private portal: ComponentPortal<AdapterSelectorPanel> | null = null;
 
@@ -189,7 +181,6 @@ export class ModelSourceInput {
     private readonly changeDetectorRef: ChangeDetectorRef,
     private readonly adapterExtensionService: AdapterExtensionService,
     private readonly destroyRef: DestroyRef,
-    private readonly extensionService: ExtensionService,
     @Inject('ModelLoaderService')
     private readonly modelLoaderService: ModelLoaderServiceInterface,
     private readonly overlay: Overlay,
@@ -488,7 +479,8 @@ export class ModelSourceInput {
     this.addModelItems(modelItems);
   }
 
-  handleClickOpenAdapterDropdown(modelItem: ModelItem, anchor: HTMLElement) {
+  handleClickOpenAdapterDropdown(modelItem: ModelItem, event: MouseEvent) {
+    const anchor = event.currentTarget as HTMLElement;
     const curSelectedAdapterId = modelItem.selectedAdapter?.id;
     const overlayRef = this.createOverlay(anchor);
     const ref = overlayRef.attach(this.portal!);
@@ -496,6 +488,7 @@ export class ModelSourceInput {
     ref.instance.candidates = modelItem.adapterCandidates || [];
     ref.instance.onClose.subscribe((selectedCandidate) => {
       overlayRef.dispose();
+      anchor.focus();
 
       // Clear error and select the item when the item previously has errors and
       // user changes the adapter.
@@ -513,11 +506,29 @@ export class ModelSourceInput {
   }
 
   handleClickViewSelectedModels() {
+    if (this.loading() || this.selectedModelsCount === 0) return;
     this.loading.set(true);
     const selectedModelItems = this.modelItems.filter((item) => item.selected);
-    this.modelLoaderService.loadModels(selectedModelItems).then(() => {
-      this.loading.set(false);
-    });
+    for (const item of selectedModelItems) item.errorMessage = undefined;
+    this.modelLoaderService
+      .loadModels(selectedModelItems)
+      .catch((error: unknown) => {
+        for (const item of selectedModelItems) {
+          if (
+            item.status() !== ModelItemStatus.DONE &&
+            item.status() !== ModelItemStatus.ERROR
+          ) {
+            item.errorMessage =
+              error instanceof Error ? error.message : String(error);
+            item.status.set(ModelItemStatus.ERROR);
+            item.selected = false;
+          }
+        }
+      })
+      .finally(() => {
+        this.loading.set(false);
+        this.changeDetectorRef.markForCheck();
+      });
 
     this.urlService.setUiState(undefined);
     this.urlService.setModels(
@@ -551,12 +562,9 @@ export class ModelSourceInput {
 
   getSelectedAdapterName(modelItem: ModelItem): string {
     if (modelItem.selectedAdapter == null) {
-      return '?';
+      return 'No matching adapter';
     }
-    const isDefault =
-      (modelItem.adapterCandidates || []).indexOf(modelItem.selectedAdapter) ===
-      0;
-    return isDefault ? 'Default' : modelItem.selectedAdapter?.name || '?';
+    return modelItem.selectedAdapter.name || modelItem.selectedAdapter.id;
   }
 
   hasSupportedAdapter(modelItem: ModelItem): boolean {
@@ -580,25 +588,10 @@ export class ModelSourceInput {
 
   getModelItemStatusString(modelItem: ModelItem): string {
     const status = modelItem.status();
-    if (IS_EXTERNAL && status === ModelItemStatus.UPLOADING) {
-      return 'Processing';
-    }
+    if (!this.hasSupportedAdapter(modelItem)) return 'Unsupported format';
+    if (status === ModelItemStatus.NOT_STARTED) return 'Ready to open';
+    if (status === ModelItemStatus.DONE) return 'Converted';
     return status;
-  }
-
-  linkifyErrorMessage(modelItem: ModelItem): string {
-    const errorMessage: string = modelItem.errorMessage || '';
-    const parts = errorMessage.split(' ');
-    return parts
-      .map((part) => {
-        // TODO(jingjin): Add support for other types of links.
-        if (part.startsWith('go/')) {
-          return `<a href='http://${part}' target='_blank'>${part}</a>`;
-        } else {
-          return part;
-        }
-      })
-      .join(' ');
   }
 
   get disableAddEnteredModelPathButton(): boolean {
@@ -746,6 +739,14 @@ export class ModelSourceInput {
     );
     overlayRef.backdropClick().subscribe(() => {
       overlayRef.dispose();
+      ele.focus();
+    });
+    overlayRef.keydownEvents().subscribe((event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        overlayRef.dispose();
+        ele.focus();
+      }
     });
     return overlayRef;
   }

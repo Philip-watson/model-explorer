@@ -1,0 +1,114 @@
+<!--
+@license
+Copyright 2026 The Model Explorer Authors. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================
+-->
+
+<aside aria-labelledby="environment-heading">
+  <h2 id="environment-heading">Environment</h2>
+  <section aria-labelledby="extensions-heading">
+    <h3 id="extensions-heading">Extensions</h3>
+    @if (extensions.loadError()) {
+    <p class="error" role="alert">
+      {{extensions.loadError()}} Reload the page to try again.
+    </p>
+    } @else {
+    <p>
+      {{customAdapters().length}} custom {{customAdapters().length === 1 ?
+      'adapter' : 'adapters'}} loaded
+    </p>
+    @for (adapter of customAdapters().slice(0, 3); track adapter.id) {
+    <div class="extension-row">
+      <span>{{adapter.name}}</span>
+      <span class="loaded"
+        ><mat-icon aria-hidden="true">check_circle_outline</mat-icon
+        >Loaded</span
+      >
+      <span class="formats">
+        @for (format of adapter.fileExts; track format) {
+        <span class="format">.{{format}}</span> }
+      </span>
+    </div>
+    } @if (additionalAdapters().length > 0 || providers().length > 0) {
+    <details>
+      <summary>View loaded extensions</summary>
+      @for (adapter of additionalAdapters(); track adapter.id) {
+      <div class="extension-detail">
+        <strong>{{adapter.name}}</strong>
+        <p>{{getAdapterSummary(adapter)}}</p>
+        <div class="formats">
+          @for (format of adapter.fileExts; track format) {
+          <span class="format">.{{format}}</span> }
+        </div>
+      </div>
+      } @if (providers().length > 0) {
+      <h4>Node-data providers</h4>
+      @for (provider of providers(); track provider.id) {
+      <div class="extension-detail">
+        <strong>{{provider.name}}</strong>
+        <p>{{provider.description}}</p>
+      </div>
+      } }
+    </details>
+    } }
+    <button
+      mat-button
+      class="text-action"
+      (click)="showPrototypeFeature('extensions')"
+    >
+      Manage extensions
+    </button>
+  </section>
+  <section aria-labelledby="formats-heading">
+    <h3 id="formats-heading">Supported formats</h3>
+    @if (extensions.loadError()) {
+    <p>Format information is unavailable.</p>
+    } @else {
+    <div class="formats">
+      @for (format of formats().slice(0, 5); track format) {
+      <span class="format">.{{format}}</span> }
+    </div>
+    <details>
+      <summary>View all formats</summary>
+      <div class="formats">
+        @for (format of formats(); track format) {
+        <span class="format">.{{format}}</span> }
+      </div>
+      <p>
+        Formats reported by the loaded adapters. File contents are checked when
+        you open a model.
+      </p>
+      <p>MLIR supports TF, TFL, StableHLO, Shardy and TOSA dialects.</p>
+      <a
+        href="https://github.com/google-ai-edge/model-explorer/wiki/2.-User-Guide#how-to-select-pytorch-models"
+        target="_blank"
+        rel="noopener"
+        >Opening PyTorch models</a
+      >
+    </details>
+    }
+  </section>
+  <section aria-labelledby="server-heading">
+    <h3 id="server-heading">Server</h3>
+    <p>Accessed via {{accessAddress}}</p>
+    <button
+      mat-button
+      class="text-action"
+      (click)="showPrototypeFeature('diagnostics')"
+    >
+      View diagnostics
+    </button>
+  </section>
+</aside>

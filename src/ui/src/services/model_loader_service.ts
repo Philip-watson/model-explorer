@@ -82,7 +82,15 @@ export class ModelLoaderService implements ModelLoaderServiceInterface {
         modelItem.type === ModelItemType.GRAPH_JSONS_FROM_SERVER ||
         modelItem.type === ModelItemType.FILE_PATH
       ) {
-        tasks.push(this.loadModel(modelItem));
+        tasks.push(
+          this.loadModel(modelItem).catch((error: unknown) => {
+            modelItem.selected = false;
+            modelItem.status.set(ModelItemStatus.ERROR);
+            modelItem.errorMessage =
+              error instanceof Error ? error.message : String(error);
+            return [];
+          }),
+        );
       }
     }
 

@@ -18,7 +18,12 @@
 
 import {ConnectedPosition, OverlaySizeConfig} from '@angular/cdk/overlay';
 import {CommonModule} from '@angular/common';
-import {ChangeDetectionStrategy, Component, Inject} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Inject,
+  inject,
+} from '@angular/core';
 import {MatButtonModule} from '@angular/material/button';
 import {MAT_DIALOG_DATA, MatDialogModule} from '@angular/material/dialog';
 import {MatIconModule} from '@angular/material/icon';
@@ -31,6 +36,7 @@ import {
   SettingType,
 } from '../../services/settings_service';
 import {Bubble} from '../bubble/bubble';
+import {ThemePreference, ThemeService} from '../../services/theme_service';
 
 /** Data for the settings dialog. */
 export interface SettingsDialogData {
@@ -57,6 +63,11 @@ export interface SettingsDialogData {
 })
 export class SettingsDialog {
   readonly SettingType = SettingType;
+  readonly themeService = inject(ThemeService);
+
+  changeTheme(value: string) {
+    this.themeService.setThemePreference(value as ThemePreference);
+  }
 
   readonly helpPopupSize: OverlaySizeConfig = {
     minWidth: 0,

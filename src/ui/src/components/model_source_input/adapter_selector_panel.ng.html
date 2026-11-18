@@ -16,20 +16,25 @@ limitations under the License.
 ==============================================================================
 -->
 
-<div class="container" [@transformPanel]="'showing'">
+<div
+  class="container"
+  cdkTrapFocus
+  [cdkTrapFocusAutoCapture]="true"
+  [@transformPanel]="'showing'"
+>
   @for (candidate of candidates; track candidate.id; let i = $index) {
-    <div class="candidate-container"
-        [class.selected]="selectedAdapter?.id === candidate.id"
-        (click)="handleSelectCandidate(candidate)">
-      <div class="name">
-        {{candidate.name || candidate.id}}
-        @if (i === 0) {
-          <span class="default-label">Default</span>
-        }
-      </div>
-      <div class="description">
-        {{candidate.description || '-'}}
-      </div>
+  <button
+    type="button"
+    class="candidate-container"
+    [class.selected]="selectedAdapter?.id === candidate.id"
+    (click)="handleSelectCandidate(candidate)"
+  >
+    <div class="name">
+      {{candidate.name || candidate.id}} @if (i === 0) {
+      <span class="default-label">Default</span>
+      }
     </div>
+    <div class="description">{{candidate.description || '-'}}</div>
+  </button>
   }
 </div>

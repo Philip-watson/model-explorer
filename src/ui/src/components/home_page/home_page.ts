@@ -27,6 +27,7 @@ import {
   Inject,
   inject,
   Signal,
+  TemplateRef,
   signal,
   ViewChild,
 } from '@angular/core';
@@ -39,6 +40,7 @@ import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {ActivatedRoute, Router} from '@angular/router';
 
+import {getElectronApi} from '../../common/utils';
 import {registerApiTokenRejectedHandler} from '../../common/api_auth';
 import {type ModelLoaderServiceInterface} from '../../common/model_loader_service_interface';
 import {ExtensionService} from '../../services/extension_service';
@@ -92,12 +94,8 @@ import {
 import {VisualizerUiState} from '../visualizer/common/visualizer_ui_state';
 import {Logo} from '../visualizer/logo';
 import {ModelGraphVisualizer} from '../visualizer/model_graph_visualizer';
-import {
-  NewVersionChip,
-  NewVersionService,
-} from '../visualizer/new_version_chip';
+import {NewVersionService} from '../visualizer/new_version_chip';
 import {ThreejsService} from '../visualizer/threejs_service';
-import {WelcomeCard} from '../welcome_card/welcome_card';
 
 /**
  * The component for the home page.
@@ -117,9 +115,7 @@ import {WelcomeCard} from '../welcome_card/welcome_card';
     MatTooltipModule,
     ModelGraphVisualizer,
     ModelSourceInput,
-    NewVersionChip,
     OpenInNewTabButton,
-    WelcomeCard,
   ],
   templateUrl: './home_page.ng.html',
   styleUrls: ['./home_page.scss'],
@@ -132,6 +128,13 @@ export class HomePage implements AfterViewInit {
 
   readonly loadingExtensions;
   readonly loadedGraphCollections;
+  readonly newVersionInfo = computed(() => this.newVersionService.info());
+  readonly isElectron = getElectronApi() != null;
+
+  openInfoDialog(template: TemplateRef<unknown>) {
+    this.dialog.open(template, {width: '480px'});
+  }
+
   runningVersion = computed(() => this.newVersionService.info().runningVersion);
 
   private readonly themeService = inject(ThemeService);
@@ -307,7 +310,9 @@ export class HomePage implements AfterViewInit {
       // Use DataTransfer interface to access the file(s)
       files.push(...Array.from(event.dataTransfer?.files || []));
     }
-    this.modelSourceInput.addFiles(files);
+    if (!this.loadingExtensions() && !this.modelSourceInput?.loading()) {
+      this.modelSourceInput?.addFiles(files);
+    }
   }
 
   handleClickTitle(refresh = false) {

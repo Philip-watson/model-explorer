@@ -178,3 +178,19 @@
     }
   }
 }
+
+.appearance-setting {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 20px;
+  color: var(--me-on-surface-color);
+  font-size: 14px;
+  select {
+    padding: 8px;
+    border: 1px solid var(--me-outline-color);
+    border-radius: 4px;
+    background: var(--me-surface-container-low-color);
+    color: inherit;
+  }
+}
